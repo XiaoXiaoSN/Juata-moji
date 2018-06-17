@@ -1,0 +1,91 @@
+<html>
+<body style="text-align:center">
+<img src="p.png">
+<h1>Introduzca primero divisor:</h1>
+<h3>(Mas pequeno = emojis mas grandes)
+<br/><br/>
+Div: <input type="number" value="6" id="div" style="font-size:24pt;height:32px;width:60px;">
+<br/>
+</h3>
+<h1>Por ultimo seleccione foto:</h1>
+<h3>Recomendamos fotos con bastante brillo para mejores resultados</h3>
+<input type="file" id="file_input">
+
+<script>
+var dime=64;				//dimension del emoji
+var div;					//division tamano emoji
+
+var xe=30;					//cantidad x de emojis en la plantilla de emojis
+var ye=30;					//cantidad y de emojis en la plantilla de emojis
+
+var imge = new Image();		//plantilla emojis
+imge.src = "emo.png";
+
+var imgp = new Image();		//plantilla emojis escalada a 1px/emoji
+imgp.src = "emop.png";
+
+var imgdata;				//mapa de bits imagen original con resolucion w*h
+var imgdatae;				//mapa de bits emojis con resolucion xe*ye
+
+var textbox=document.getElementById("div");
+//Primero obtenemos el color promedio de cada emoji. Para ello creamos un canvas
+
+imgp.onload = function() {
+			var canvase = document.createElement('canvas');
+			canvase.width = xe;
+			canvase.height = ye;
+			var ctxe=canvase.getContext('2d');
+            ctxe.drawImage(imgp,0,0);
+			imgdatae=ctxe.getImageData(0,0,xe,ye).data;
+    }
+
+
+//Carga de nuestra imagen
+document.getElementById("file_input").addEventListener('change', function (e) {
+    var URL = window.webkitURL || window.URL;
+    var url = URL.createObjectURL(e.target.files[0]);
+    var img = new Image();
+    img.src = url;
+
+    img.onload = function() {
+			div=textbox.value;			
+			//Obtenemos la resolucion que tendra la imagen de emojis
+			var h=Math.floor(document.body.clientHeight/dime*div)-div;				//y emojis imagen final
+			var w=Math.floor(document.body.clientWidth/dime*div)-div;				//x emojis imagen final
+			
+			//Nos aseguramos de mantener la proporcion de la imagen
+			var alternativew=~~(h*img.width/img.height);
+			if (alternativew<w) w=alternativew;
+			else h=~~(w*img.height/img.width);
+
+			//primero obtenemos bitmap de la imagen reescalada a 1px por emoji
+			var canvas = document.createElement('canvas');
+			var ctx=canvas.getContext('2d');
+			canvas.width = w;
+			canvas.height = h;
+            ctx.drawImage(img,0,0,w,h);
+			imgdata=ctx.getImageData(0,0,w,h).data;
+			
+			var canvasf= document.createElement('canvas');		//Creamos canvas definitivo
+			var ctxf=canvasf.getContext('2d');
+			canvasf.width = dime*w/div;
+			canvasf.height = dime*h/div;
+			
+			for (var p=0; p<w*h; p++) {	//Bucle para cada pixel
+			var mejore;					//Pixel mas parecido
+			var mejorv=0;				//similitud del pixel mas parecido
+			for (var i=0;i<xe*ye;i++)
+			{
+				var diferencia= (256-Math.abs(imgdatae[i*4+2]-imgdata[p*4+2]))*(256-Math.abs(imgdatae[i*4+1]-imgdata[p*4+1]))*(256-Math.abs(imgdatae[i*4]-imgdata[p*4]));
+				if (diferencia>mejorv) {mejorv=diferencia;mejore=i;}
+			}
+			ctxf.drawImage(imge,dime*(mejore%xe),dime*Math.floor(mejore/xe),dime,dime,dime/div*(p%w),dime/div*Math.floor(p/w),dime/div,dime/div);		//dibujamos emoji
+			}
+			document.body.innerHTML="";
+			document.body.appendChild(canvasf);
+    }
+});
+
+</script>
+</body>
+</html>
