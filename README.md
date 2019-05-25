@@ -19,12 +19,6 @@ We just need to re-scale the source image, and find for each pixel the bitmap pi
 
 All this is done in the client side (javascript).
 
-##  Limitations
-This tool was quicky made a day of boredom long time ago, having some limitations:
-
-* The emojis are outdated. There are lot more emojis now.
-* Darker images gives worst results. Since the tool doesn't detect nor modify picture brightness/contrast, I suggest to manually increase picture brightness/contrast before uploading. 
-
 ## Links
 
 Full blog article:

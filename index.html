@@ -1,42 +1,94 @@
 <html>
+<head>
+<meta charset="UTF-8">
+</head>
 <body style="text-align:center">
 <img src="p.png">
-<h1>Introduzca primero divisor:</h1>
-<h3>(Mas pequeno = emojis mas grandes)
-<br/><br/>
-Div: <input type="number" value="6" id="div" style="font-size:24pt;height:32px;width:60px;">
-<br/>
+<h2>Reducir emojis: <input type="range" min="1" max="10" value="7" id="div" onchange="generarImagen()"></h2>
+<h2>Brillo: <input type="range" min="-8" max="8" value="0" id="b" onchange="generarImagen()">
+Contraste: <input type="range" min="-8" max="8" value="0" id="c" onchange="generarImagen()">
+</h2>
+<h2>Tipo emojis: 
+<input type="radio" name="tipoEmoji" onchange="cambiaTipoEmojis(this.value)" value="ios" checked>IOS
+<input type="radio" name="tipoEmoji" onchange="cambiaTipoEmojis(this.value)" value="android">Android
+<input type="radio" name="tipoEmoji" onchange="cambiaTipoEmojis(this.value)" value="twitter">Twitter
+</h2>
+<h2>Color de fondo: 
+<input type="radio" name="bckgc" onchange="cambiaBackground(this.value)" value="white" checked>Blanco
+<input type="radio" name="bckgc" onchange="cambiaBackground(this.value)" value="black">Negro
+<input type="radio" name="bckgc" onchange="cambiaBackground(this.value)" value="#dcf8c6">Amarillo Whatsapp
+</h2>
+<h3>Algoritmo: 
+<input type="radio" name="modo" onchange="cambiaModo(this.value)" value="1" checked>Nuevo
+<input type="radio" name="modo" onchange="cambiaModo(this.value)" value="2">Antiguo
+<input type="checkbox" id="transp" onchange="generarImagen()">Fondo PNG transparente
 </h3>
-<h1>Por ultimo seleccione foto:</h1>
-<h3>Recomendamos fotos con bastante brillo para mejores resultados</h3>
 <input type="file" id="file_input">
+<hr/>
+<img id="resultado">
 
 <script>
 var dime=64;				//dimension del emoji
-var div;					//division tamano emoji
 
-var xe=30;					//cantidad x de emojis en la plantilla de emojis
-var ye=30;					//cantidad y de emojis en la plantilla de emojis
+var xe=41;					//cantidad x de emojis en la plantilla de emojis
+var ye=41;					//cantidad y de emojis en la plantilla de emojis
 
 var imge = new Image();		//plantilla emojis
-imge.src = "emo.png";
-
 var imgp = new Image();		//plantilla emojis escalada a 1px/emoji
-imgp.src = "emop.png";
+var img = new Image();		//imagen a transformar a emojis
+
+var coloresGenerados=false;
+var bckg="white";
+var modo=1;
+
+imge.onload= generarImagen;
+imgp.onload = generarColores;
+img.onload = generarImagen;
+cargaTipoEmojis("ios");
+img.src = "p.png";
 
 var imgdata;				//mapa de bits imagen original con resolucion w*h
 var imgdatae;				//mapa de bits emojis con resolucion xe*ye
 
-var textbox=document.getElementById("div");
+var divSlider=document.getElementById("div");
+var bSlider=document.getElementById("b");
+var cSlider=document.getElementById("c");
+
 //Primero obtenemos el color promedio de cada emoji. Para ello creamos un canvas
 
-imgp.onload = function() {
+function cambiaTipoEmojis(t) {
+	coloresGenerados=false;
+	cargaTipoEmojis(t);
+}
+
+function cambiaBackground(b) {
+	coloresGenerados=false;
+	bckg=b;
+	generarColores();
+}
+
+function cambiaModo(m) {
+	modo=parseInt(m);
+	generarImagen();
+}
+
+function cargaTipoEmojis(t) {
+			imgp.src = "colores/"+t+".png";
+			imge.src = "emojis/"+t+".png";
+}
+
+
+	function generarColores() {
 			var canvase = document.createElement('canvas');
 			canvase.width = xe;
 			canvase.height = ye;
 			var ctxe=canvase.getContext('2d');
+			ctxe.fillStyle = bckg;
+			ctxe.fillRect(0, 0, xe, ye);
             ctxe.drawImage(imgp,0,0);
 			imgdatae=ctxe.getImageData(0,0,xe,ye).data;
+			coloresGenerados=true;
+			generarImagen();
     }
 
 
@@ -44,47 +96,87 @@ imgp.onload = function() {
 document.getElementById("file_input").addEventListener('change', function (e) {
     var URL = window.webkitURL || window.URL;
     var url = URL.createObjectURL(e.target.files[0]);
-    var img = new Image();
     img.src = url;
+});
 
-    img.onload = function() {
-			div=textbox.value;			
+function cuadrado(n) {
+	return n*n;
+}
+
+	function generarImagen() {
+			if (!img.complete || !coloresGenerados || !imge.complete) return;		//Salimos si faltan por cargar
+			var div=divSlider.value;												//division tamano emoji
 			//Obtenemos la resolucion que tendra la imagen de emojis
-			var h=Math.floor(document.body.clientHeight/dime*div)-div;				//y emojis imagen final
 			var w=Math.floor(document.body.clientWidth/dime*div)-div;				//x emojis imagen final
-			
-			//Nos aseguramos de mantener la proporcion de la imagen
-			var alternativew=~~(h*img.width/img.height);
-			if (alternativew<w) w=alternativew;
-			else h=~~(w*img.height/img.width);
+			var h=~~(w*img.height/img.width);										//y emojis imagen final
 
 			//primero obtenemos bitmap de la imagen reescalada a 1px por emoji
 			var canvas = document.createElement('canvas');
 			var ctx=canvas.getContext('2d');
 			canvas.width = w;
 			canvas.height = h;
+			ctx.fillStyle = bckg;
+			ctx.fillRect(0, 0, w, h);
             ctx.drawImage(img,0,0,w,h);
 			imgdata=ctx.getImageData(0,0,w,h).data;
+			
+			//Brillo y contraste
+			var c=parseInt(cSlider.value);
+			var b=parseInt(bSlider.value);
+			if (c!=0) {
+				var contrast = (c/10) + 1;
+				var intercept = 128 * (1 - contrast);
+				for(var i=0;i<imgdata.length;i+=4){   //r,g,b,a
+					imgdata[i] = imgdata[i]*contrast + intercept;
+					imgdata[i+1] = imgdata[i+1]*contrast + intercept;
+					imgdata[i+2] = imgdata[i+2]*contrast + intercept;
+				}
+			}
+			if (b!=0) {
+				var brightness = b*10;
+				for(var i=0;i<imgdata.length;i+=4){   //r,g,b,a
+					imgdata[i]+=brightness;
+					imgdata[i+1]+=brightness;
+					imgdata[i+2]+=brightness;
+				}
+			}
 			
 			var canvasf= document.createElement('canvas');		//Creamos canvas definitivo
 			var ctxf=canvasf.getContext('2d');
 			canvasf.width = dime*w/div;
 			canvasf.height = dime*h/div;
+			if (!document.getElementById("transp").checked) {
+				ctxf.fillStyle = bckg;
+				ctxf.fillRect(0, 0, canvasf.width, canvasf.height);
+			}
 			
 			for (var p=0; p<w*h; p++) {	//Bucle para cada pixel
 			var mejore;					//Pixel mas parecido
+			switch(modo) {
+			
+			case 1:
+			var mejorv=Number.MAX_VALUE;	//similitud del pixel mas parecido
+			for (var i=0;i<xe*ye;i++)
+			{
+				var diferencia= cuadrado(imgdatae[i*4+2]-imgdata[p*4+2])+cuadrado(imgdatae[i*4+1]-imgdata[p*4+1])+cuadrado(imgdatae[i*4]-imgdata[p*4]);
+				if (diferencia<mejorv) {mejorv=diferencia;mejore=i;}
+			}
+			break;
+			
+			case 2:
 			var mejorv=0;				//similitud del pixel mas parecido
 			for (var i=0;i<xe*ye;i++)
 			{
 				var diferencia= (256-Math.abs(imgdatae[i*4+2]-imgdata[p*4+2]))*(256-Math.abs(imgdatae[i*4+1]-imgdata[p*4+1]))*(256-Math.abs(imgdatae[i*4]-imgdata[p*4]));
 				if (diferencia>mejorv) {mejorv=diferencia;mejore=i;}
 			}
+			break;
+			}
 			ctxf.drawImage(imge,dime*(mejore%xe),dime*Math.floor(mejore/xe),dime,dime,dime/div*(p%w),dime/div*Math.floor(p/w),dime/div,dime/div);		//dibujamos emoji
 			}
-			document.body.innerHTML="";
-			document.body.appendChild(canvasf);
+			
+			resultado.src=canvasf.toDataURL("image/png");
     }
-});
 
 </script>
 </body>
