@@ -123,6 +123,15 @@ function cuadrado(n) {
 			//Brillo y contraste
 			var c=parseInt(cSlider.value);
 			var b=parseInt(bSlider.value);
+			
+			if (b!=0) {
+				var brightness = b*10;
+				for(var i=0;i<imgdata.length;i+=4){   //r,g,b,a
+					imgdata[i]+=brightness;
+					imgdata[i+1]+=brightness;
+					imgdata[i+2]+=brightness;
+				}
+			}
 			if (c!=0) {
 				var contrast = (c/10) + 1;
 				var intercept = 128 * (1 - contrast);
@@ -130,14 +139,6 @@ function cuadrado(n) {
 					imgdata[i] = imgdata[i]*contrast + intercept;
 					imgdata[i+1] = imgdata[i+1]*contrast + intercept;
 					imgdata[i+2] = imgdata[i+2]*contrast + intercept;
-				}
-			}
-			if (b!=0) {
-				var brightness = b*10;
-				for(var i=0;i<imgdata.length;i+=4){   //r,g,b,a
-					imgdata[i]+=brightness;
-					imgdata[i+1]+=brightness;
-					imgdata[i+2]+=brightness;
 				}
 			}
 			
